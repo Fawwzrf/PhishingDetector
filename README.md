@@ -66,7 +66,7 @@ Analisis **SHAP** digunakan untuk memahami fitur mana yang paling berpengaruh te
 
 ### Top 5 Fitur Paling Berpengaruh
 
-| Rank | Fitur | Mean |SHAP| |
+| Rank | Fitur | Mean |
 |---|---|---|
 | 1 | `qty_dot_directory_was_missing` | 1.194 |
 | 2 | `time_domain_activation` | 0.971 |
@@ -204,9 +204,9 @@ modeling:
 
 ---
 
-## 📝 Lisensi
+## 📝 Creator
 
-MIT License
+Fawwzrf.__
 
 ---
 
