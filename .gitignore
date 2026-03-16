@@ -1,0 +1,41 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Data & artifacts
+data/interim/
+data/processed/
+models/
+reports/
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode / Cursor
+.vscode/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db

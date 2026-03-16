@@ -1,0 +1,55 @@
+# configs/ml_config.yaml 
+
+project:
+  name        : "my_ml_project"
+  version     : "1.0.0"
+  random_state: 42
+  log_level   : "INFO"
+
+data:
+    target_column: "phishing"
+    id_columns: ["id", "customer_id"]
+    date_columns: ["created_at", "updated_at"]
+
+# ── PREPROCESSING
+preprocessing:
+  missing_values:
+    threshold_drop_column: 0.6 # Drop kolom jika missing > 60%
+    threshold_drop_row: 0.5 # Drop baris jika missing > 50%
+    strategy_numerical: "median" # mean / median / knn / iterative
+    strategy_categorical: "most_frequent"
+  outliers:
+    method: "iqr" # iqr / zscore / isolation_forest / lof
+    threshold: 1.5 # IQR multiplier
+    treatment: "cap" # cap / remove / transform
+  encoding:
+    high_cardinality_threshold: 20 # Kolom dengan unique > 20 = high cardinality
+    default_strategy: "target" # onehot / ordinal / target / woe
+  scaling:
+    strategy: "robust" # standard / minmax / robust / power
+  feature_selection:
+    variance_threshold: 0.01
+    correlation_threshold: 0.95
+    n_features_to_select: "auto"
+# ── MODELING
+modeling:
+  task: "classification"
+  metric: "roc_auc"
+  n_cv_folds: 5
+  random_state: 42
+  baseline:
+    strategy: "most_frequent"
+  models_to_try:
+    - logistic_regression
+    - random_forest
+    - xgboost
+    - lightgbm
+  tuning:
+    n_trials: 100
+    timeout: 3600
+    sampler: "tpe"
+
+# ── MLFLOW 
+mlflow:
+  experiment_name : "default_experiment"
+  tracking_uri    : "http://localhost:5000"
