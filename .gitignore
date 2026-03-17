@@ -40,3 +40,27 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment & Private
+.env
+.env.local
+.env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ML/Backend
+mlruns/
+backend/__pycache__/
+*.log
+debug_output.txt
+final_diagnostic_output.txt
+all_features.json
+error_output.json
+diagnose_final.py
+diagnose_v2.py
+debug_inference.py
+

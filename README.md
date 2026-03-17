@@ -109,31 +109,78 @@ Proyek ini dibagi menjadi **5 tahap** yang dijalankan secara berurutan melalui J
 ## 📂 Struktur Direktori
 
 ```
-PhishingDetector/
+ PhishingDetector/
+├── backend/                     # FastAPI Backend
+│   ├── app.py                   # Main API with endpoints (/predict, /health)
+│   ├── extractor.py             # Feature extraction (112 features + Punycode)
+│   ├── predictor.py             # Pipeline inference & SHAP calculation
+│   └── mlflow_logger.py         # Asynchronous MLflow logging
+├── frontend/                    # Next.js Frontend (Tailwind v4 + shadcn)
+│   ├── src/app/                 # Layout & Page assembly
+│   ├── src/components/          # UI Components (ResultCard, SHAPChart, etc.)
+│   └── src/lib/                 # API client & History utils
 ├── configs/
-│   └── ml_config.yaml           # Konfigurasi seluruh pipeline (preprocessing, modeling, tuning)
+│   └── ml_config.yaml           # Konfigurasi seluruh pipeline
 ├── data/
-│   ├── raw/                     # Dataset mentah (dataset_full.csv)
-│   ├── interim/                 # Data bersih sebelum feature selection
-│   └── processed/               # Data final (X_train, X_test, y_train, y_test .parquet)
+│   └── raw/                     # Dataset mentah
 ├── models/
-│   ├── lightgbm_champion.joblib # Model champion yang sudah di-tuning
-│   ├── modeling_meta.json       # Metadata hasil training (skor, params, fitur)
-│   └── registry.json            # Model registry (versioning)
-├── notebooks/                   # Jupyter Notebooks untuk setiap tahap pipeline
-├── reports/                     # Grafik hasil (confusion matrix, SHAP plots)
+│   ├── lightgbm_champion.joblib # Model champion
+│   └── preprocessing/           # Pipeline artifacts (scaler, handlers, etc.)
 ├── src/
 │   └── mltools/                 # Library kustom untuk ML pipeline
-│       ├── preprocessing/       # Missing handler, outlier, scaler, encoder, selector, splitter
-│       ├── modeling/            # Baseline, boosting models, evaluator, tuner
-│       ├── interpretation/      # SHAP analyzer
-│       ├── data/                # Data loader & EDA
-│       └── shared/              # Config, schemas, exceptions, logging
-├── tests/                       # Unit & integration tests
-├── requirements.txt             # Dependensi Python
-├── pyproject.toml               # Build system & project metadata
-└── README_MLTOOLS.md            # Dokumentasi internal library mltools
+├── notebooks/                   # Jupyter Notebooks
+├── reports/                     # Grafik hasil evaluasi
+├── requirements.txt             # Dependensi Backend
+└── README.md                    # Dokumentasi Utama
 ```
+
+---
+
+## 🌐 Web Application (Full-Stack)
+
+Selain pipeline riset, proyek ini menyediakan aplikasi web interaktif untuk deteksi real-time.
+
+### 🎨 Frontend (`frontend/`)
+- **Tech Stack**: Next.js 15, React 19, Tailwind CSS v4, shadcn/ui, TypeScript.
+- **Fitur**:
+  - Input URL dengan validasi format.
+  - Peringatan **IDN Homograph/Punycode** (visualisasi original vs decoded).
+  - Visualisasi **SHAP Impact** (Top 5 fitur paling berpengaruh).
+  - Breakdown detail seluruh fitur yang diekstraksi.
+  - Riwayat pencarian lokal (*local history*).
+
+### ⚡ Backend (`backend/`)
+- **Tech Stack**: FastAPI, Uvicorn, Pydantic, LightGBM, SHAP, MLflow.
+- **Workflow**:
+  1. Menerima URL via `POST /predict`.
+  2. Ekstraksi 112 fitur secara asinkron.
+  3. Preprocessing via `mltools` pipeline artifacts.
+  4. Prediksi & perhitungan SHAP secara lokal.
+  5. Logging asinkron ke MLflow.
+
+---
+
+## 🛠️ Instalasi & Setup (Production Ready)
+
+### 1. Backend Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+pip install -e .
+
+# Jalankan server
+uvicorn backend.app:app --host 0.0.0.0 --port 8001 --reload
+```
+
+### 2. Frontend Setup
+```bash
+cd frontend
+npm install
+
+# Jalankan dev server
+npm run dev
+```
+Buka `http://localhost:3000` di browser Anda.
 
 ---
 
