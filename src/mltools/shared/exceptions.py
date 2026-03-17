@@ -103,3 +103,9 @@ class PipelineError(MLToolsError):
 
 class PipelineNotFittedError(PipelineError):
     pass
+
+
+# ── SERVING ───────────────────────────────────────────────────
+class ServingError(MLToolsError):
+    """Error saat model serving / inference."""
+    pass
