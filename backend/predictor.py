@@ -8,6 +8,11 @@ from pathlib import Path
 
 from backend.schemas import PredictionResult, TopFeature, PredictionMeta
 
+# Make sure mltools is accessible
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+from mltools.pipeline import FullMLPipeline
+
 class PredictorPipeline:
     def __init__(self, base_dir: str = "models"):
         self.base_dir = Path(base_dir)
@@ -15,35 +20,29 @@ class PredictorPipeline:
         self.model = None
         self.explainer = None
         
-        # Preprocessing steps
-        self.missing_handler = None
-        self.outlier_handler = None
-        self.feature_engineer = None
-        self.scaler = None
-        self.selector = None
+        self.full_pipeline = None
         
         self._load_artifacts()
 
     def _load_artifacts(self):
-        # Load Meta
-        with open(self.base_dir / "modeling_meta.json", "r") as f:
-            self.meta = json.load(f)
-            
+        # Load FullMLPipeline
+        pipeline_path = self.base_dir / "full_pipeline.joblib"
+        self.full_pipeline = FullMLPipeline.load(str(pipeline_path))
+        
+        # Load feature list expected by extraction
         with open("all_features.json", "r") as f:
             self.raw_features = json.load(f)
             if "phishing" in self.raw_features:
                 self.raw_features.remove("phishing")
-            
-        # Load preprocessing pipeline sequentially (needed to match what model was trained on)
-        prep_dir = self.base_dir / "preprocessing"
-        self.missing_handler = joblib.load(prep_dir / "missing_handler.joblib")
-        self.outlier_handler = joblib.load(prep_dir / "outlier_handler.joblib")
-        self.feature_engineer = joblib.load(prep_dir / "feature_engineer.joblib")
-        self.scaler = joblib.load(prep_dir / "scaler.joblib")
-        self.selector = joblib.load(prep_dir / "selector.joblib")
         
-        # Load LightGBM model
-        self.model = joblib.load(self.base_dir / "lightgbm_champion.joblib")
+        feature_names_path = self.base_dir / "feature_names.json"
+        if feature_names_path.exists():
+            with open(feature_names_path, "r") as f:
+                 self.meta = json.load(f)
+        else:
+            self.meta = {"champion": "lightgbm", "optimal_threshold": 0.5, "feature_names": self.full_pipeline.result_.feature_names}
+            
+        self.model = self.full_pipeline.result_.champion_model
         
         # Initialize SHAP explainer
         self.explainer = shap.TreeExplainer(self.model)
@@ -55,24 +54,17 @@ class PredictorPipeline:
             if feat not in raw_features:
                 raw_features[feat] = np.nan
         
-        df_raw = pd.DataFrame([raw_features])[self.raw_features]
+        # Convert dictionary to single-row dataframe
+        df_raw = pd.DataFrame([raw_features])
         
-        # 1. Pipeline transformations
-        df_proc = self.missing_handler.transform(df_raw)
-        df_proc = self.outlier_handler.transform(df_proc)
-        df_proc = self.feature_engineer.transform(df_proc)
-        df_proc = self.scaler.transform(df_proc)
-        df_proc = self.selector.transform(df_proc)
-        
-        # Ensure correct column order expected by the model
-        feature_names = self.meta["feature_names"]
-        df_final = df_proc[feature_names]
+        # 1. Pipeline transformations directly via transform_new
+        df_final = self.full_pipeline.transform_new(df_raw)
+        feature_names = self.meta.get("feature_names", self.full_pipeline.result_.feature_names)
         
         # 2. Inference
         proba_array = self.model.predict(df_final)
-        # Handle different predict returns (could be 1D or 2D)
         if hasattr(proba_array[0], '__len__'):
-            probability = float(proba_array[0][1])  # Assuming class 1 is phishing
+            probability = float(proba_array[0][1])
         else:
             probability = float(proba_array[0])
             
@@ -98,7 +90,6 @@ class PredictorPipeline:
         
         # 4. SHAP Explanation
         shap_values = self.explainer.shap_values(df_final)[0]
-        # LightGBM SHAP returns raw log-odds. If shap_values is a list (multiclass format though binary), handle it
         if isinstance(shap_values, list):
             shap_values = shap_values[1][0] 
             
@@ -122,8 +113,8 @@ class PredictorPipeline:
             "result": result,
             "top_features": top_features,
             "meta": PredictionMeta(
-                model_version=self.meta.get("champion_name", "lightgbm_v1"),
-                inference_time_ms=0, # Computed at the API level
+                model_version=self.meta.get("champion", "lightgbm"),
+                inference_time_ms=0, 
                 request_id=""
             )
         }

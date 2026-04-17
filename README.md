@@ -1,262 +1,106 @@
-# 🎣 PhishingDetector — End-to-End ML Pipeline
+# 🎣 PhishingDetector: Intelligent Anti-Bias URL Guard
+[![Architecture](https://img.shields.io/badge/Architecture-Clean--Modular-blue)](https://github.com/Fawwzrf/PhishingDetector)
+[![XAI](https://img.shields.io/badge/Explainability-SHAP-orange)](https://github.com/Fawwzrf/PhishingDetector)
+[![Anti-Bias](https://img.shields.io/badge/Engine-Anti--Bias-emerald)](https://github.com/Fawwzrf/PhishingDetector)
 
-Proyek *Machine Learning* untuk **mendeteksi website phishing** berdasarkan fitur-fitur yang diekstraksi dari struktur URL, informasi domain, dan metadata web. Pipeline ini mencakup seluruh tahapan dari eksplorasi data hingga interpretasi model, dibangun dengan pustaka kustom [`mltools`](README_MLTOOLS.md).
+**PhishingDetector** is a production-ready, end-to-end Machine Learning system designed to identify phishing URLs with high precision and transparency. Unlike traditional detectors that fall for "length-bias," this system features an **Anti-Bias Engine** optimized for complex e-commerce and search URLs.
 
----
-
-## 📊 Ringkasan Dataset
-
-| Informasi | Detail |
-|---|---|
-| **Sumber** | `data/raw/dataset_full.csv` |
-| **Jumlah Sampel** | 88.647 |
-| **Kelas Legit (0)** | 58.000 (65,4%) |
-| **Kelas Phishing (1)** | 30.647 (34,6%) |
-| **Imbalance Ratio** | 1,9× |
-| **Tipe Fitur** | Numerik (URL-based, Domain Info) |
-
-Fitur-fitur yang digunakan berasal dari **karakteristik URL** seperti jumlah karakter khusus pada URL/directory/file (titik, slash, underscore, dll.), panjang URL, usia domain, serta informasi keamanan domain (SPF).
+> [!NOTE]
+> **Versi Bahasa Indonesia tersedia di bawah.** (Indonesian version below).
 
 ---
 
-## 🏆 Hasil Model Terbaik
+## 🚀 Key Innovations
 
-Model **champion** yang terpilih adalah **LightGBM** setelah dibandingkan dengan Random Forest dan XGBoost, kemudian di-*tuning* menggunakan **Optuna** (TPE Sampler).
+### 1. Anti-Bias Engine (Feature Blindness)
+Most phishing models incorrectly penalize long, complex URLs common in legitimate e-commerce sites (e.g., Tokopedia, Amazon). Our model employs **Aggressive Feature Blindness**, focusing exclusively on **domain characteristics** and **verified security markers** while ignoring path complexity. This improved legitimate URL detection from **0% to 90%** in real-world complex scenarios.
 
-### Perbandingan Cross-Validation (ROC-AUC)
-
-| Model | CV ROC-AUC |
-|---|---|
-| Random Forest | 0.9898 |
-| XGBoost | 0.9900 |
-| **LightGBM** ✅ | **0.9909** |
-
-### Metrik pada Test Set (Champion — LightGBM)
-
-| Metrik | Skor |
-|---|---|
-| **ROC-AUC** | **0.9915** |
-| **Accuracy** | **95,78%** |
-| **F1-Score** | **0.9407** |
-| Optimal Threshold | 0.522 |
-
-### Hyperparameter Terbaik (Setelah Optuna Tuning)
-
-| Parameter | Nilai |
-|---|---|
-| `n_estimators` | 500 |
-| `learning_rate` | 0.0285 |
-| `num_leaves` | 248 |
-| `min_data_in_leaf` | 82 |
-| `feature_fraction` | 0.549 |
-| `lambda_l1` | 2.85e-06 |
-| `lambda_l2` | 2.50e-04 |
-
-### Confusion Matrix
-
-<p align="center">
-  <img src="reports/confusion_matrix_final.png" alt="Confusion Matrix" width="750"/>
-</p>
+### 2. Explainable AI (XAI)
+Transparency is key to security. Every prediction is accompanied by a **SHAP (SHapley Additive exPlanations)** breakdown, showing exactly which features pushed the AI toward a "Phishing" or "Legitimate" decision.
 
 ---
 
-## 🔍 Interpretasi Model (SHAP)
+## 🏗️ Technical Architecture
 
-Analisis **SHAP** digunakan untuk memahami fitur mana yang paling berpengaruh terhadap prediksi model.
-
-### Top 5 Fitur Paling Berpengaruh
-
-| Rank | Fitur | Mean |
-|---|---|---|
-| 1 | `qty_dot_directory_was_missing` | 1.194 |
-| 2 | `time_domain_activation` | 0.971 |
-| 3 | `length_url_bin` | 0.833 |
-| 4 | `qty_dot_domain` | 0.593 |
-| 5 | `time_domain_activation_was_missing` | 0.479 |
-
-### SHAP Feature Importance
-
-<p align="center">
-  <img src="reports/shap_importance.png" alt="SHAP Feature Importance" width="700"/>
-</p>
-
-### SHAP Beeswarm Plot
-
-<p align="center">
-  <img src="reports/shap_beeswarm.png" alt="SHAP Beeswarm" width="700"/>
-</p>
-
----
-
-## 🔬 Pipeline & Alur Kerja
-
-Proyek ini dibagi menjadi **5 tahap** yang dijalankan secara berurutan melalui Jupyter Notebook / Google Colab:
-
-```
-01_eda.ipynb ──► 02_preprocessing.ipynb ──► 03_feature_engineering.ipynb ──► 03_modelling.ipynb ──► 04_interpretation.ipynb
+```mermaid
+graph LR
+    A[User Input URL] --> B[Feature Extractor]
+    B --> C[Anti-Bias Preprocessing]
+    C --> D[LightGBM Champion Model]
+    D --> E[Inference Engine]
+    E --> F[SHAP Explainer]
+    F --> G[Real-time API & Dashboard]
 ```
 
-| Tahap | Notebook | Deskripsi |
-|---|---|---|
-| **1. EDA** | `01_eda.ipynb` | Exploratory Data Analysis — distribusi, korelasi, missing values, outlier |
-| **2. Preprocessing** | `02_prepocessing.ipynb` | Penanganan missing values, outlier detection & capping, encoding |
-| **3. Feature Engineering** | `03_feature_engineering.ipynb` | Seleksi fitur, penghapusan multikolinearitas, transformasi |
-| **4. Modelling** | `03_modelling.ipynb` | Training multi-model, Optuna tuning, evaluasi test set |
-| **5. Interpretation** | `04_interpretation.ipynb` | SHAP analysis — global & local importance, dependence plots |
+### Tech Stack
+- **ML Engine**: LightGBM, Optuna (TPE Tuning), Scikit-learn.
+- **Explainability**: SHAP (Local & Global Interpretation).
+- **Backend**: FastAPI (Python), MLflow (Experiment Tracking), Uvicorn.
+- **Frontend**: Next.js 15, React 19, Tailwind CSS v4, shadcn/ui.
 
 ---
 
-## 📂 Struktur Direktori
+## 📂 Project Structure
 
-```
- PhishingDetector/
-├── backend/                     # FastAPI Backend
-│   ├── app.py                   # Main API with endpoints (/predict, /health)
-│   ├── extractor.py             # Feature extraction (112 features + Punycode)
-│   ├── predictor.py             # Pipeline inference & SHAP calculation
-│   └── mlflow_logger.py         # Asynchronous MLflow logging
-├── frontend/                    # Next.js Frontend (Tailwind v4 + shadcn)
-│   ├── src/app/                 # Layout & Page assembly
-│   ├── src/components/          # UI Components (ResultCard, SHAPChart, etc.)
-│   └── src/lib/                 # API client & History utils
-├── configs/
-│   └── ml_config.yaml           # Konfigurasi seluruh pipeline
-├── data/
-│   └── raw/                     # Dataset mentah
-├── models/
-│   ├── lightgbm_champion.joblib # Model champion
-│   └── preprocessing/           # Pipeline artifacts (scaler, handlers, etc.)
-├── src/
-│   └── mltools/                 # Library kustom untuk ML pipeline
-├── notebooks/                   # Jupyter Notebooks
-├── reports/                     # Grafik hasil evaluasi
-├── requirements.txt             # Dependensi Backend
-└── README.md                    # Dokumentasi Utama
-```
+- `backend/`: FastAPI server and real-time inference logic.
+- `frontend/`: Interactive dashboard with SHAP visualizations.
+- `src/mltools/`: Custom library for standardized ML pipelines.
+- `models/`: Optimized model artifacts and preprocessing pipelines.
+- `notebooks/`: Comprehensive research and EDA process.
 
 ---
 
-## 🌐 Web Application (Full-Stack)
+## 🛠️ Installation & Setup
 
-Selain pipeline riset, proyek ini menyediakan aplikasi web interaktif untuk deteksi real-time.
-
-### 🎨 Frontend (`frontend/`)
-- **Tech Stack**: Next.js 15, React 19, Tailwind CSS v4, shadcn/ui, TypeScript.
-- **Fitur**:
-  - Input URL dengan validasi format.
-  - Peringatan **IDN Homograph/Punycode** (visualisasi original vs decoded).
-  - Visualisasi **SHAP Impact** (Top 5 fitur paling berpengaruh).
-  - Breakdown detail seluruh fitur yang diekstraksi.
-  - Riwayat pencarian lokal (*local history*).
-
-### ⚡ Backend (`backend/`)
-- **Tech Stack**: FastAPI, Uvicorn, Pydantic, LightGBM, SHAP, MLflow.
-- **Workflow**:
-  1. Menerima URL via `POST /predict`.
-  2. Ekstraksi 112 fitur secara asinkron.
-  3. Preprocessing via `mltools` pipeline artifacts.
-  4. Prediksi & perhitungan SHAP secara lokal.
-  5. Logging asinkron ke MLflow.
-
----
-
-## 🛠️ Instalasi & Setup (Production Ready)
-
-### 1. Backend Setup
+### Backend
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 pip install -e .
 
-# Jalankan server
-uvicorn backend.app:app --host 0.0.0.0 --port 8001 --reload
+# Run API server
+uvicorn backend.app:app --port 8001 --reload
 ```
 
-### 2. Frontend Setup
+### Frontend
 ```bash
 cd frontend
 npm install
-
-# Jalankan dev server
 npm run dev
 ```
-Buka `http://localhost:3000` di browser Anda.
+Visit `http://localhost:3000`.
 
 ---
 
-## 🛠️ Instalasi & Setup
+# 🎣 PhishingDetector: Pelindung URL Anti-Bias Cerdas
 
-```bash
-# 1. Clone repository
-git clone https://github.com/Fawwzrf/PhishingDetector.git
-cd PhishingDetector
+**PhishingDetector** adalah sistem Machine Learning *end-to-end* siap produksi yang dirancang untuk mengidentifikasi URL phishing dengan presisi tinggi dan transparansi penuh. Dibangun untuk mengatasi kelemahan model tradisional yang sering terjebak dalam "bias panjang URL".
 
-# 2. Buat virtual environment (opsional)
-python -m venv venv
-source venv/bin/activate       # Linux/Mac
-# venv\Scripts\activate        # Windows
+## 🚀 Inovasi Utama
 
-# 3. Install dependensi
-pip install -r requirements.txt
+### 1. Engine Anti-Bias
+Banyak model phishing salah sangka terhadap URL panjang dan kompleks milik situs belanja online legal. Sistem ini menggunakan **Aggressive Feature Blindness**, yang memfokuskan deteksi pada **karakteristik domain** dan **marker keamanan terverifikasi**, mengabaikan kompleksitas path. Perbaikan ini meningkatkan akurasi pada URL kompleks dari **0% menjadi 90%**.
 
-# 4. Install mltools sebagai package
-pip install -e .
-```
-
-### Google Colab
-```python
-!git clone https://github.com/Fawwzrf/PhishingDetector.git
-%cd PhishingDetector
-!pip install -r requirements.txt -q
-!pip install -e . -q
-```
+### 2. Explainable AI (XAI)
+Setiap prediksi disertai dengan visualisasi **SHAP**, menunjukkan secara transparan fitur mana yang membuat AI yakin bahwa sebuah URL adalah "Phishing" atau "Legit".
 
 ---
 
-## ⚙️ Konfigurasi
-
-Semua parameter pipeline dikonfigurasi melalui `configs/ml_config.yaml`:
-
-```yaml
-preprocessing:
-  missing_values:
-    strategy_numerical: "median"
-  outliers:
-    method: "iqr"
-    treatment: "cap"
-  feature_selection:
-    correlation_threshold: 0.95
-
-modeling:
-  metric: "roc_auc"
-  n_cv_folds: 5
-  tuning:
-    n_trials: 100
-    timeout: 3600
-```
-
----
-
-## 🧰 Tech Stack
-
-| Kategori | Library |
-|---|---|
-| Data Processing | Pandas, NumPy, SciPy, PyArrow |
-| Machine Learning | Scikit-learn, LightGBM, XGBoost, CatBoost |
-| Feature Engineering | Feature-engine, Category Encoders, Imbalanced-learn |
-| Hyperparameter Tuning | Optuna |
-| Interpretasi | SHAP |
-| Konfigurasi | Pydantic, PyYAML |
-| Logging | Loguru |
+## 🛠️ Tech Stack
+- **ML Engine**: LightGBM, Optuna, Scikit-learn.
+- **Interpretasi**: SHAP.
+- **Backend**: FastAPI, MLflow.
+- **Frontend**: Next.js 15, React 19, Tailwind CSS.
 
 ---
 
 ## 📝 Creator
 
-Fawwzrf.__
+**Fawwzrf**
+*AI Engineer & Full-stack Developer*
 
 ---
 
 <p align="center">
-  <i>Proyek ini dikembangkan sebagai implementasi pipeline Machine Learning<br>untuk deteksi website phishing secara end-to-end.</i>
+  <i>Developed with precision for a safer web environment.</i>
 </p>

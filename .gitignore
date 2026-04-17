@@ -63,4 +63,12 @@ error_output.json
 diagnose_final.py
 diagnose_v2.py
 debug_inference.py
+mlflow.db
+*.joblib.resolved
+test_results*.txt
+drop_bias*.py
+retrain.py
+retrain_output.txt
+test_results_finalv2.txt
+all_features.json
 
